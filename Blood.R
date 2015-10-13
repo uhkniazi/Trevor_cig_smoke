@@ -29,6 +29,18 @@ fTime = factor(fTime, levels = c('t0', 't20', 't300'))
 
 x.lumi$fTime = fTime
 
+# assign a factor based on groups
+fCondition = rep(NA, length=length(x.lumi$sampleID))
+i = grep('^1\\d+', x= x.lumi$sampleID)
+fCondition[i] = 'COPD.S'
+i = grep('^2\\d+', x= x.lumi$sampleID)
+fCondition[i] = 'Healthy.S'
+i = grep('^3\\d+', x= x.lumi$sampleID)
+fCondition[i] = 'Non.S'
+fCondition = factor(fCondition, levels=c('Non.S', 'Healthy.S', 'COPD.S'))
+
+x.lumi$fCondition = fCondition
+
 #### initial quality checks using PCA
 m = exprs(x.lumi)
 # pca on samples i.e. covariance matrix of m
@@ -118,6 +130,7 @@ m = exprs(oExp.lumi)
 pr.out = prcomp(t(m), scale=T)
 ## choose appropriate factor
 fSamples = oExp.lumi$fTime
+fSamples = oExp.lumi$fCondition
 
 col.p = rainbow(length(unique(fSamples)))
 col = col.p[as.numeric(fSamples)]
@@ -154,6 +167,7 @@ table(is.na(cvSym))
 mDat = mDat[!is.na(cvSym),]
 # choose the factor
 fSamples = oExp.lumi$fTime
+fSamples = oExp.lumi$fCondition
 
 design = model.matrix(~fSamples)
 colnames(design) = levels(fSamples)
@@ -203,7 +217,7 @@ for (i in seq_along(n)) {
   col = rep('lightgrey', times=length(p.val))
   c = which(dfGenes$adj.P.Val < 0.1)
   col[c] = 'red'
-  plot(fc, p.val, pch=20, xlab='Fold Change', ylab='-log10 P.Value', col=col, main=paste(names(n[i])), xlim=c(-1, 1))
+  plot(fc, p.val, pch=20, xlab='Fold Change', ylab='-log10 P.Value', col=col, main=paste(names(n[i])), xlim=c(-2, 2))
   abline(v = 0, col='grey', lty=2)
   abline(h = y.cut, col='red', lty=2)
   # second cutoff for adjusted p-values
@@ -239,8 +253,6 @@ i = 1:nrow(mCommonGenes)
 
 m1 = mCommonGenes[i,]
 m1 = mDat[names(m1),]
-# m1 = m1[,which(fSamples %in% c('0', '7', '10', '28'))]
-# fGroups = as.character(fSamples[which(fSamples %in% c('0', '7', '10', '28'))])
 fGroups = fSamples
 colnames(m1) = fGroups
 m1 = m1[,order(fGroups)]
@@ -271,7 +283,7 @@ for (i in seq_along(n)) {
   dfGenes = topTable(fit, coef = n[i], number = Inf)
   dfGenes.2 = dfGenes[lSigGenes.adj[[names(n[i])]],]
   rownames(dfGenes.2) = NULL
-  f = paste('Results/', 'Significant_genes_at_10pcFDR_T0_vs_', names(n[i]), '.csv', sep='')
+  f = paste('Results/', 'Significant_genes_at_10pcFDR_HealthySmoker_vs_', names(n[i]), '.csv', sep='')
   dfGenes.2 = dfGenes.2[,c(2, 3, 4, 5, 6, 8, 9)]
   write.csv(dfGenes.2, file=f)
 }
